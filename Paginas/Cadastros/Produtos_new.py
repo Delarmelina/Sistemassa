@@ -3,10 +3,11 @@ from db.functions.db_produtos import obter_produtos
 from db.functions.db_config import obter_categorias, obter_subcategorias, obter_unidades, obter_subcategorias_por_categoria
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
+from utils.modals.modal_select import abrir_selecao
 
-tab1, tab2 = st.tabs(["Produto", "Receita"])
 
 def render():
+    tab1, tab2 = st.tabs(["Produto", "Receita"])
     with tab1:
         # Campos do formulário
         nome = st.text_input("Nome do Produto")
@@ -23,7 +24,7 @@ def render():
             st.rerun()
     with tab2:
         if not(receita):
-            "Esse produto não possui uma receita!"
+            st.write("Esse produto não possui uma receita!")
         else:
             # Configuração inicial da aba de Receita
             st.title("Aba de Receita")
@@ -46,18 +47,15 @@ def render():
             # Criar espaço reservado para o DataFrame
             dataframe_placeholder = st.empty()
 
-            # Exibir tabela interativa
-            #st.subheader("Receita")
-            #st.dataframe(df, use_container_width=True)
-
             with st.expander("Adicionar item na receita"):
                 formcol1, formcol2 = st.columns(2)
                 with formcol1:
                     produto_sel_receita = st.text_input("Produto:")
                     quantidade_sel_receita = st.number_input("Quantidade:", min_value=0.0, format="%.2f", step=1.0)
                 with formcol2:
-                    st.button("SP")
-                    unidade_sel_receita = st.text_input("Unidade", "kg", disabled=True)  # Valor padrão: "kg"
+                    if st.button("SP"):
+                        unidade_selecionada = abrir_selecao("unidade")
+                        st.write(unidade_selecionada)
                 if st.button("Adicionar item", use_container_width=True):
                     if produto_sel_receita:
                         # Adicionar dados ao DataFrame no estado da sessão

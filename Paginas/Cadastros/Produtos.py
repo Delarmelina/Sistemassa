@@ -3,6 +3,7 @@ from db.functions.db_produtos import obter_produtos
 from db.functions.db_config import obter_categorias, obter_subcategorias, obter_unidades, obter_subcategorias_por_categoria
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
+from Paginas.Cadastros.Produtos_new import render as Render_dados_produtos
 
 
 #------------------------------------------------------------
@@ -52,5 +53,4 @@ with tab1:
     if col4.button("Alterar Receita", use_container_width=True, disabled=not(linha_selecionada is not None and linha_selecionada["Receita"].iloc[0] == '✅')):
         print(st.session_state.linha_selecionada)
 with tab2:
-    from Paginas.Cadastros.Produtos_new import render as Render_dados_produtos
     Render_dados_produtos()
