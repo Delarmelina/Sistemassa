@@ -5,6 +5,33 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.modals.modal_select import abrir_selecao
 
+# Estilo CSS para alinhar o botão de lupa ao lado esquerdo do input
+st.markdown("""
+    <style>
+        .input-container {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            width: 100%;
+            background-color: white;
+        }
+        .input-container input {
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            font-size: 16px;
+            padding-left: 5px;
+        }
+        .search-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 def render():
     tab1, tab2 = st.tabs(["Produto", "Receita"])
@@ -26,43 +53,56 @@ def render():
         if not(receita):
             st.write("Esse produto não possui uma receita!")
         else:
-            # Configuração inicial da aba de Receita
-            st.title("Aba de Receita")
+            # Criar layout com duas colunas (3 para a tabela, 2 para o formulário)
+            col_linha1, col_linha2, col_linha3 = st.columns([1, 1, 4])
+            st.divider()
+            col_tabela, col_form = st.columns([3, 2])
+            st.divider()
 
             # Entrada para Quantidade Produzida
-            col1, col2 = st.columns([2, 2])
-
-            with col1:
+            with col_linha1:
                 quantidade_produzida = st.number_input("Quantidade Produzida:", min_value=0.0, format="%.2f")
 
-            with col2:
-                unidade_var = st.text_input("Unidade", unidade[1], disabled=True)  # Valor padrão: "kg"
+            with col_linha2:
+                st.text_input("Unidade", unidade[1], disabled=True)  # Valor padrão: "kg"
 
-            # Dados simulados para exibição na tabela
+            # Inicializa dados na sessão
             if "data" not in st.session_state:
                 st.session_state.data = {"ID Produto": [], "Produto": [], "Quantidade": []}
-            # Criar DataFrame para exibir como tabela
+
+            # Criar DataFrame
             df = pd.DataFrame(st.session_state.data)
 
-            # Criar espaço reservado para o DataFrame
-            dataframe_placeholder = st.empty()
+            # Layout dividido: Tabela à esquerda, Formulário à direita
+            with col_tabela:
+                st.subheader("Receita")
+                dataframe_placeholder = st.empty()
+                dataframe_placeholder.dataframe(df, use_container_width=True)
 
-            with st.expander("Adicionar item na receita"):
-                formcol1, formcol2 = st.columns(2)
-                with formcol1:
-                    produto_sel_receita = st.text_input("Produto:")
-                    quantidade_sel_receita = st.number_input("Quantidade:", min_value=0.0, format="%.2f", step=1.0)
-                with formcol2:
-                    if st.button("SP"):
-                        unidade_selecionada = abrir_selecao("unidade")
-                        st.write(unidade_selecionada)
+            with col_form:
+                st.subheader("Adicionar Item")
+
+                # Criar input estilizado
+                produto_sel_receita = st.text_input("Produto:", key="produto", label_visibility="collapsed")
+
+                # Botão de busca embutido
+                col1, col2 = st.columns([0.1, 0.9])  # Define a largura do botão e do campo de entrada
+                with col1:
+                    if st.button("🔍", key="botao_pesquisa"):
+                        abrir_selecao("unidade")
+                with col2:
+                    st.text_input("Produto:", key="produto2", value=produto_sel_receita, label_visibility="collapsed")
+
+                quantidade_sel_receita = st.number_input("Quantidade:", min_value=0.0, format="%.2f", step=1.0)
+
                 if st.button("Adicionar item", use_container_width=True):
                     if produto_sel_receita:
-                        # Adicionar dados ao DataFrame no estado da sessão
-                        st.session_state.data["ID Produto"].append(123)
+                        # Adiciona item à sessão e atualiza DataFrame
+                        st.session_state.data["ID Produto"].append(len(st.session_state.data["ID Produto"]) + 1)
                         st.session_state.data["Produto"].append(produto_sel_receita)
                         st.session_state.data["Quantidade"].append(quantidade_sel_receita)
                         st.success("Item adicionado com sucesso!")
+
+                        # Atualiza tabela
                         df = pd.DataFrame(st.session_state.data)
                         dataframe_placeholder.dataframe(df, use_container_width=True)
-            dataframe_placeholder.dataframe(df, use_container_width=True)

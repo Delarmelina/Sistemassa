@@ -27,7 +27,7 @@ gb = GridOptionsBuilder.from_dataframe(df_produtos)
 gb.configure_selection("single", use_checkbox=True)  # Configura seleção de uma única linha
 grid_options = gb.build()
 
-tab1, tab2 = st.tabs(["Produtos", 'Novo/Alterar Produto'])
+tab1, tab2 = st.tabs(["Produtos", 'Novo Produto'])
 
 # Renderizando a tabela
 
@@ -43,9 +43,7 @@ with tab1:
     linha_selecionada = grid_response["selected_rows"]
 
     # Botões das funções
-    col1, col2, col3, col4 = st.columns(4)
-    if col1.button("Novo Produto", use_container_width=True):
-        print("novo_produto()")
+    col2, col3, col4 = st.columns(3)
     if col2.button("Excluir Produto", use_container_width=True, disabled=linha_selecionada is None):
         print("Receita")
     if col3.button("Editar Produto", use_container_width=True, disabled=linha_selecionada is None):
