@@ -5,35 +5,8 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.modals.modal_select import abrir_selecao
 
-# Estilo CSS para alinhar o botão de lupa ao lado esquerdo do input
-st.markdown("""
-    <style>
-        .input-container {
-            display: flex;
-            align-items: center;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 5px;
-            width: 100%;
-            background-color: white;
-        }
-        .input-container input {
-            border: none;
-            outline: none;
-            flex-grow: 1;
-            font-size: 16px;
-            padding-left: 5px;
-        }
-        .search-button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 def render():
+
     tab1, tab2 = st.tabs(["Produto", "Receita"])
     with tab1:
         # Campos do formulário
@@ -77,32 +50,29 @@ def render():
             with col_tabela:
                 st.subheader("Receita")
                 dataframe_placeholder = st.empty()
-                dataframe_placeholder.dataframe(df, use_container_width=True)
+                dataframe_placeholder.dataframe(df, use_container_width=True, hide_index=True, height=200)
 
             with col_form:
                 st.subheader("Adicionar Item")
 
-                # Criar input estilizado
-                produto_sel_receita = st.text_input("Produto:", key="produto", label_visibility="collapsed")
+                if "produto_selecionada" in st.session_state:
+                    st.write("Produto selecionado: " + str(st.session_state.produto_selecionada))
+                else:
+                    st.write("Nenhum produto selecionado")
 
-                # Botão de busca embutido
-                col1, col2 = st.columns([0.1, 0.9])  # Define a largura do botão e do campo de entrada
-                with col1:
-                    if st.button("🔍", key="botao_pesquisa"):
-                        abrir_selecao("unidade")
-                with col2:
-                    st.text_input("Produto:", key="produto2", value=produto_sel_receita, label_visibility="collapsed")
+                if st.button("Selecionar produto", key="botao_pesquisa", use_container_width=True):
+                    abrir_selecao("produto")                   
 
                 quantidade_sel_receita = st.number_input("Quantidade:", min_value=0.0, format="%.2f", step=1.0)
 
                 if st.button("Adicionar item", use_container_width=True):
-                    if produto_sel_receita:
+                    if st.session_state.produto_selecionada:
                         # Adiciona item à sessão e atualiza DataFrame
                         st.session_state.data["ID Produto"].append(len(st.session_state.data["ID Produto"]) + 1)
-                        st.session_state.data["Produto"].append(produto_sel_receita)
+                        st.session_state.data["Produto"].append(st.session_state.produto_selecionada)
                         st.session_state.data["Quantidade"].append(quantidade_sel_receita)
                         st.success("Item adicionado com sucesso!")
 
                         # Atualiza tabela
                         df = pd.DataFrame(st.session_state.data)
-                        dataframe_placeholder.dataframe(df, use_container_width=True)
+                        dataframe_placeholder.dataframe(df, use_container_width=True, hide_index=True, height=300)
