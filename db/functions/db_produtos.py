@@ -51,7 +51,7 @@ def obter_produtos():
         LEFT JOIN subcategorias s ON p.subcategoria_id = s.id
         LEFT JOIN unidades u ON p.unidade_id = u.id
         WHERE p.restaurante_id = ?
-    """, (get_restaurante(),))
+    """, (int(get_restaurante()),))
     produtos = cursor.fetchall()
     conn.close()
     return produtos
