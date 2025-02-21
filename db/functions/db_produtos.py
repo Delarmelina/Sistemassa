@@ -13,6 +13,7 @@ def inserir_produto(nome, categoria_id, subcategoria_id, unidade_id, estoque_atu
     try:
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
+
         cursor.execute("""
             INSERT INTO produtos (nome, categoria_id, subcategoria_id, unidade_id, estoque_atual, descricao, quant, restaurante_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -20,19 +21,17 @@ def inserir_produto(nome, categoria_id, subcategoria_id, unidade_id, estoque_atu
 
         last_produto_id = cursor.lastrowid
 
-        if (float(quant) > 0.0):
-            for i in receita:
+        if float(quant) > 0.0:
+            for i in range(len(receita['ID Produto'])):
                 cursor.execute("""
                     INSERT INTO receitas (produto_id, ingrediente_id, quantidade)
                     VALUES (?, ?, ?)
-                """, (last_produto_id, i[0], i[2]))
-
+                """, (last_produto_id, receita['ID Produto'][i], receita['Quantidade'][i]))
         conn.commit()
         conn.close()
         return True  # Indica que a inserção foi bem-sucedida
     except Exception as e:
-        print(f"Erro ao inserir produto: {e}")
-        return False  # Indica que houve um erro na inserção
+        return (f"Erro ao inserir produto: {e}")
 
 def obter_produtos():
     conn = conectar()
@@ -46,8 +45,7 @@ def obter_produtos():
             p.estoque_atual,
             u.nome AS unidade_nome,
             p.descricao,
-            p.quant,
-            p.restaurante_id
+            p.quant
         FROM produtos p
         LEFT JOIN categorias c ON p.categoria_id = c.id
         LEFT JOIN subcategorias s ON p.subcategoria_id = s.id
@@ -133,8 +131,14 @@ def obter_produto_por_nome(nome):
     return produto
 
 def deletar_produto(produto_id):
-    conn = conectar()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM produtos WHERE id = ?", (produto_id,))
-    conn.commit()
-    conn.close()
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+        # Deletar os itens da receita
+        cursor.execute("DELETE FROM receitas WHERE produto_id = ?", (int(produto_id),))
+        cursor.execute("DELETE FROM produtos WHERE id = ?", (int(produto_id),))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        return f"Erro ao atualizar o produto: {e}"

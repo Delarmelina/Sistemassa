@@ -4,7 +4,7 @@ import pandas as pd
 from db.functions.db_config import obter_unidades
 from db.functions.db_produtos import obter_produtos
 
-@st.dialog("Selecionar opção")
+@st.dialog("Selecionar opção", width="large")
 def abrir_selecao(tab):
     if tab == "unidade":
         unidades = obter_unidades()
@@ -27,10 +27,12 @@ def abrir_selecao(tab):
             st.rerun()
     elif tab == "produto":
         produtos = obter_produtos()
-        df = pd.DataFrame(produtos, columns=["ID", "produto"])
+        produtos = [produto[:4] + produto[5:7] + produto[8:] for produto in produtos]  # Obter apenas os dados relevantes
+        df = pd.DataFrame(produtos, columns=["ID", "Produto", "Categoria", "Subcategoria", "Unidade", "Descrição"])
 
         gb = GridOptionsBuilder.from_dataframe(df)
         gb.configure_selection("single", use_checkbox=True)  # Configura seleção de uma única linha
+        gb.configure_pagination(paginationAutoPageSize=True)  # Configura paginação
         grid_options = gb.build()
 
         # Criar a grade interativa
@@ -42,7 +44,7 @@ def abrir_selecao(tab):
         # Verifica se há uma linha selecionada e se o botão foi pressionado
         if st.button("Adicionar") and linha_selecionada["ID"].iloc[0] is not None:
             # Gravar no session state
-            st.session_state.produto_selecionada = linha_selecionada["produto"].iloc[0]
+            st.session_state.produto_selecionada = linha_selecionada["Produto"].iloc[0]
             st.rerun()
 
     return None  # Retorna None caso nada seja selecionado

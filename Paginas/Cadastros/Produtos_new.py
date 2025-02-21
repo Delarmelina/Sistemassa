@@ -1,8 +1,7 @@
 import streamlit as st
-from db.functions.db_produtos import obter_produtos
-from db.functions.db_config import obter_categorias, obter_subcategorias, obter_unidades, obter_subcategorias_por_categoria
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder
+from db.functions.db_config import obter_categorias, obter_unidades, obter_subcategorias_por_categoria
+from db.functions.db_produtos import inserir_produto
 from utils.modals.modal_select import abrir_selecao
 
 def render():
@@ -18,10 +17,14 @@ def render():
         descricao = st.text_area("Descrição")
         receita = st.checkbox("Este produto é uma receita!")
 
-        if st.button("Teste"):
-            st.write("Produto adicionado com sucesso!")
-            print(str(nome) + " - " + str(categoria) + " - " + str(subcategoria) + " - " + str(estoque) + " - " + str(unidade) + " - " + str(descricao) + " - " + str(receita) )
+        resultado = None
+        if st.button("Adicionar produto"):
+            resultado = inserir_produto(nome, categoria[0], subcategoria[0], unidade[0], estoque, descricao, st.session_state.quant, st.session_state.data)
             st.rerun()
+        if resultado == True:
+            st.success("Produto adicionado com sucesso!")
+        elif resultado is not None:
+            st.write("Erro ao adicionar produto:", resultado)
     with tab2:
         if not(receita):
             st.write("Esse produto não possui uma receita!")
@@ -34,7 +37,7 @@ def render():
 
             # Entrada para Quantidade Produzida
             with col_linha1:
-                quantidade_produzida = st.number_input("Quantidade Produzida:", min_value=0.0, format="%.2f")
+                st.session_state.quant = st.number_input("Quantidade Produzida:", min_value=0.0, format="%.2f")
 
             with col_linha2:
                 st.text_input("Unidade", unidade[1], disabled=True)  # Valor padrão: "kg"
@@ -66,7 +69,7 @@ def render():
                 quantidade_sel_receita = st.number_input("Quantidade:", min_value=0.0, format="%.2f", step=1.0)
 
                 if st.button("Adicionar item", use_container_width=True):
-                    if st.session_state.produto_selecionada:
+                    if st.session_state.produto_selecionada and quantidade_sel_receita>0.0:
                         # Adiciona item à sessão e atualiza DataFrame
                         st.session_state.data["ID Produto"].append(len(st.session_state.data["ID Produto"]) + 1)
                         st.session_state.data["Produto"].append(st.session_state.produto_selecionada)
@@ -76,3 +79,7 @@ def render():
                         # Atualiza tabela
                         df = pd.DataFrame(st.session_state.data)
                         dataframe_placeholder.dataframe(df, use_container_width=True, hide_index=True, height=300)
+                        st.session_state.produto_selecionada = None
+                        st.rerun()
+                    else:
+                        st.error("Selecione um produto e insira uma quantidade válida!")
