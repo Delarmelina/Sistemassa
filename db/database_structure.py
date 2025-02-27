@@ -73,68 +73,6 @@ def criar_banco():
     );
     """
     
-    criar_entradas = """
-    CREATE TABLE IF NOT EXISTS entradas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        data DATE NOT NULL,
-        fornecedor_id INTEGER,
-        observacoes TEXT,
-        restaurante_id INTEGER NOT NULL,
-        FOREIGN KEY(restaurante_id) REFERENCES restaurantes(id),
-        FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id)
-    );
-    """
-    
-    criar_detalhes_entradas = """
-    CREATE TABLE IF NOT EXISTS itens_entradas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        entrada_id INTEGER NOT NULL,
-        produto_id INTEGER NOT NULL,
-        quantidade REAL NOT NULL,
-        valor_unitario REAL,
-        validade DATE,
-        FOREIGN KEY (entrada_id) REFERENCES entradas(id),
-        FOREIGN KEY (produto_id) REFERENCES produtos(id)
-    );
-    """
-
-    criar_producoes = """
-    CREATE TABLE IF NOT EXISTS producoes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        data DATE NOT NULL,
-        observacoes TEXT,
-        produto_id INTEGER NOT NULL,
-        quantidade REAL NOT NULL,
-        validade DATE,
-        restaurante_id INTEGER NOT NULL,
-        FOREIGN KEY(restaurante_id) REFERENCES restaurantes(id),
-        FOREIGN KEY (produto_id) REFERENCES produtos(id)
-    );
-    """
-    
-    criar_saidas = """
-    CREATE TABLE IF NOT EXISTS saidas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        data DATE NOT NULL,
-        motivo_id INTEGER NOT NULL,
-        observacoes TEXT,
-        restaurante_id INTEGER NOT NULL,
-        FOREIGN KEY(restaurante_id) REFERENCES restaurantes(id),
-        FOREIGN KEY (motivo_id) REFERENCES motivos_saidas(id)
-    );
-    """
-    
-    criar_detalhes_saidas = """
-    CREATE TABLE IF NOT EXISTS itens_saidas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        saida_id INTEGER NOT NULL,
-        produto_id INTEGER NOT NULL,
-        quantidade REAL NOT NULL,
-        FOREIGN KEY (saida_id) REFERENCES saidas(id),
-        FOREIGN KEY (produto_id) REFERENCES produtos(id)
-    );
-    """
-
     criar_detalhes_receitas = """
     CREATE TABLE IF NOT EXISTS receitas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -163,13 +101,6 @@ def criar_banco():
         FOREIGN KEY(categoria_id) REFERENCES categorias(id)
     );
     """
-
-    criar_motivos_saidas = """
-    CREATE TABLE IF NOT EXISTS motivos_saidas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL UNIQUE
-    );
-    """
     
     # Tabela de Unidades de Medida
     criar_unidades = """
@@ -178,8 +109,33 @@ def criar_banco():
         nome TEXT NOT NULL UNIQUE
     );
     """
-   
-    
+
+    # Tabela de Movimentações
+    criar_movimentacoes = """
+    CREATE TABLE IF NOT EXISTS movimentacoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_restaurante INTEGER NOT NULL,
+        data DATETIME NOT NULL,
+        tipo TEXT CHECK(tipo IN ('entrada', 'saida', 'producao', 'transferencia')) NOT NULL,
+        origem_id INTEGER,
+        observacao TEXT,
+        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id),
+        FOREIGN KEY (origem_id) REFERENCES restaurantes(id)
+    );
+    """
+
+    criar_movimentacoes_itens = """
+    CREATE TABLE IF NOT EXISTS movimentacoes_itens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        movimentacao_id INTEGER NOT NULL,
+        produto_id INTEGER NOT NULL,
+        quantidade REAL NOT NULL,
+        tipo_movimentacao TEXT CHECK(tipo_movimentacao IN('entrada', 'saida')) NOT NULL,
+        FOREIGN KEY(movimentacao_id) REFERENCES movimentacoes(id),
+        FOREIGN KEY(produto_id) REFERENCES produtos(id)
+    );
+    """
+
     # Executando os comandos SQL para criar as tabelas
     cursor.execute(criar_tabela_usuarios)
     cursor.execute(criar_relacao_user_restaurante)
@@ -189,141 +145,133 @@ def criar_banco():
     cursor.execute(criar_fornecedores)
     cursor.execute(criar_detalhes_receitas)
 
-    cursor.execute(criar_saidas)
-    cursor.execute(criar_detalhes_saidas)
-
-    cursor.execute(criar_entradas)
-    cursor.execute(criar_detalhes_entradas)
-
-    cursor.execute(criar_producoes)
+    cursor.execute(criar_movimentacoes)
+    cursor.execute(criar_movimentacoes_itens)
 
     cursor.execute(criar_unidades)
     cursor.execute(criar_subcategorias)
     cursor.execute(criar_categorias)
-    cursor.execute(criar_motivos_saidas)
 
-    #Trigger que sempre que uma produção for inserida, o estoque do produto produzido é atualizado e o estoque dos ingredientes é decrementado
-    criar_trriger_insert_producao = """
-    CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_insert_producao
-    AFTER INSERT ON producoes
-    FOR EACH ROW
-    BEGIN
-        -- Registrar a saída com o motivo de produção
-        INSERT INTO saidas (data, motivo_id, restaurante_id, observacoes)
-        VALUES (NEW.data, (SELECT id FROM motivos_saidas WHERE nome = 'Produção'), NEW.restaurante_id, 'Saída de ingredientes para produção');
+    # #Trigger que sempre que uma produção for inserida, o estoque do produto produzido é atualizado e o estoque dos ingredientes é decrementado
+    # criar_trriger_insert_producao = """
+    # CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_insert_producao
+    # AFTER INSERT ON producoes
+    # FOR EACH ROW
+    # BEGIN
+    #     -- Registrar a saída com o motivo de produção
+    #     INSERT INTO saidas (data, motivo_id, restaurante_id, observacoes)
+    #     VALUES (NEW.data, (SELECT id FROM motivos_saidas WHERE nome = 'Produção'), NEW.restaurante_id, 'Saída de ingredientes para produção');
 
-        -- Recuperar o ID da saída recém-criada
-        INSERT INTO itens_saidas (saida_id, produto_id, quantidade)
-        SELECT last_insert_rowid(), ingrediente_id, quantidade * NEW.quantidade
-        FROM receitas
-        WHERE produto_id = NEW.produto_id;
+    #     -- Recuperar o ID da saída recém-criada
+    #     INSERT INTO itens_saidas (saida_id, produto_id, quantidade)
+    #     SELECT last_insert_rowid(), ingrediente_id, quantidade * NEW.quantidade
+    #     FROM receitas
+    #     WHERE produto_id = NEW.produto_id;
 
-        -- Atualizar o estoque do produto produzido
-        UPDATE produtos
-        SET estoque_atual = estoque_atual + NEW.quantidade
-        WHERE id = NEW.produto_id 
-        AND restaurante_id = NEW.restaurante_id;
-    END;
-    """
+    #     -- Atualizar o estoque do produto produzido
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual + NEW.quantidade
+    #     WHERE id = NEW.produto_id 
+    #     AND restaurante_id = NEW.restaurante_id;
+    # END;
+    # """
 
-    criar_trigger_insert_entrada = """
-    CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_insert_entradas
-    AFTER INSERT ON itens_entradas
-    FOR EACH ROW
-    BEGIN
-        UPDATE produtos
-        SET estoque_atual = estoque_atual + NEW.quantidade
-        WHERE id = NEW.produto_id 
-        AND restaurante_id = (SELECT restaurante_id FROM entradas WHERE id = NEW.entrada_id);
-    END;
-    """
+    # criar_trigger_insert_entrada = """
+    # CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_insert_entradas
+    # AFTER INSERT ON itens_entradas
+    # FOR EACH ROW
+    # BEGIN
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual + NEW.quantidade
+    #     WHERE id = NEW.produto_id;
+    # END;
+    # """
     
-    # Criar o trigger para atualizar o estoque após uma alteração
-    criar_trigger_update_entrada = """
-    CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_update_entradas
-    AFTER UPDATE ON itens_entradas
-    FOR EACH ROW
-    BEGIN
-        -- Primeiro, remove a quantidade anterior
-        UPDATE produtos
-        SET estoque_atual = estoque_atual - OLD.quantidade
-        WHERE id = OLD.produto_id
-        AND restaurante_id = (SELECT restaurante_id FROM entradas WHERE id = NEW.entrada_id);
+    # # Criar o trigger para atualizar o estoque após uma alteração
+    # criar_trigger_update_entrada = """
+    # CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_update_entradas
+    # AFTER UPDATE ON itens_entradas
+    # FOR EACH ROW
+    # BEGIN
+    #     -- Primeiro, remove a quantidade anterior
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual - OLD.quantidade
+    #     WHERE id = OLD.produto_id
+    #     AND restaurante_id = (SELECT restaurante_id FROM entradas WHERE id = NEW.entrada_id);
 
-        -- Depois, adiciona a nova quantidade
-        UPDATE produtos
-        SET estoque_atual = estoque_atual + NEW.quantidade
-        WHERE id = NEW.produto_id
-        AND restaurante_id = (SELECT restaurante_id FROM entradas WHERE id = NEW.entrada_id);
-    END;
-    """
+    #     -- Depois, adiciona a nova quantidade
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual + NEW.quantidade
+    #     WHERE id = NEW.produto_id
+    #     AND restaurante_id = (SELECT restaurante_id FROM entradas WHERE id = NEW.entrada_id);
+    # END;
+    # """
     
-    # Criar o trigger para atualizar o estoque após a exclusão
-    criar_trigger_delete_entrada = """
-    CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_delete_entradas
-    AFTER DELETE ON itens_entradas
-    FOR EACH ROW
-    BEGIN
-        UPDATE produtos
-        SET estoque_atual = estoque_atual - OLD.quantidade
-        WHERE id = OLD.produto_id
-        AND restaurante_id = (SELECT restaurante_id FROM entradas WHERE id = NEW.entrada_id);
-    END;
-    """
+    # # Criar o trigger para atualizar o estoque após a exclusão
+    # criar_trigger_delete_entrada = """
+    # CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_delete_entradas
+    # AFTER DELETE ON itens_entradas
+    # FOR EACH ROW
+    # BEGIN
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual - OLD.quantidade
+    #     WHERE id = OLD.produto_id;
+    # END;
+    # """
 
-    criar_trigger_insert_saida = """
-    CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_insert_saidas
-    AFTER INSERT ON itens_saidas
-    FOR EACH ROW
-    BEGIN
-        UPDATE produtos
-        SET estoque_atual = estoque_atual - NEW.quantidade
-        WHERE id = NEW.produto_id 
-        AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
-    END;
-    """
+    # criar_trigger_insert_saida = """
+    # CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_insert_saidas
+    # AFTER INSERT ON itens_saidas
+    # FOR EACH ROW
+    # BEGIN
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual - NEW.quantidade
+    #     WHERE id = NEW.produto_id 
+    #     AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
+    # END;
+    # """
     
-    # Criar o trigger para atualizar o estoque após uma alteração
-    criar_trigger_update_saida = """
-    CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_update_saidas
-    AFTER UPDATE ON itens_saidas
-    FOR EACH ROW
-    BEGIN
-        -- Primeiro, remove a quantidade anterior
-        UPDATE produtos
-        SET estoque_atual = estoque_atual + OLD.quantidade
-        WHERE id = OLD.produto_id
-        AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
+    # # Criar o trigger para atualizar o estoque após uma alteração
+    # criar_trigger_update_saida = """
+    # CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_update_saidas
+    # AFTER UPDATE ON itens_saidas
+    # FOR EACH ROW
+    # BEGIN
+    #     -- Primeiro, remove a quantidade anterior
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual + OLD.quantidade
+    #     WHERE id = OLD.produto_id
+    #     AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
 
-        -- Depois, adiciona a nova quantidade
-        UPDATE produtos
-        SET estoque_atual = estoque_atual - NEW.quantidade
-        WHERE id = NEW.produto_id
-        AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
-    END;
-    """
+    #     -- Depois, adiciona a nova quantidade
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual - NEW.quantidade
+    #     WHERE id = NEW.produto_id
+    #     AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
+    # END;
+    # """
     
-    # Criar o trigger para atualizar o estoque após a exclusão
-    criar_trigger_delete_saida = """
-    CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_delete_saidas
-    AFTER DELETE ON itens_saidas
-    FOR EACH ROW
-    BEGIN
-        UPDATE produtos
-        SET estoque_atual = estoque_atual + OLD.quantidade
-        WHERE id = OLD.produto_id
-        AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
-    END;
-    """
+    # # Criar o trigger para atualizar o estoque após a exclusão
+    # criar_trigger_delete_saida = """
+    # CREATE TRIGGER IF NOT EXISTS atualizar_estoque_after_delete_saidas
+    # AFTER DELETE ON itens_saidas
+    # FOR EACH ROW
+    # BEGIN
+    #     UPDATE produtos
+    #     SET estoque_atual = estoque_atual + OLD.quantidade
+    #     WHERE id = OLD.produto_id
+    #     AND restaurante_id = (SELECT restaurante_id FROM saidas WHERE id = NEW.saida_id);
+    # END;
+    # """
     
-    # Executar os triggers
-    cursor.execute(criar_trriger_insert_producao)
-    cursor.execute(criar_trigger_insert_entrada)
-    cursor.execute(criar_trigger_update_entrada)
-    cursor.execute(criar_trigger_delete_entrada)
-    cursor.execute(criar_trigger_insert_saida)
-    cursor.execute(criar_trigger_update_saida)
-    cursor.execute(criar_trigger_delete_saida)
+    # # Executar os triggers
+    # cursor.execute(criar_trriger_insert_producao)
+    # cursor.execute(criar_trigger_insert_entrada)
+    # cursor.execute(criar_trigger_update_entrada)
+    # cursor.execute(criar_trigger_delete_entrada)
+    # cursor.execute(criar_trigger_insert_saida)
+    # cursor.execute(criar_trigger_update_saida)
+    # cursor.execute(criar_trigger_delete_saida)
     
     # Comitar e fechar a conexão
     conn.commit()

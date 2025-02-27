@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # Inicialização do banco de dados
-#criar_banco()
+criar_banco()
 
 #Verificar se o Usuário está logado
 if get_usuario_id() is None:

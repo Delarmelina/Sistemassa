@@ -17,7 +17,9 @@ def inserir_produto(nome, categoria_id, subcategoria_id, unidade_id, estoque_atu
         cursor.execute("""
             INSERT INTO produtos (nome, categoria_id, subcategoria_id, unidade_id, estoque_atual, descricao, quant, restaurante_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (nome, categoria_id, subcategoria_id, unidade_id, estoque_atual, descricao, quant, get_restaurante()))
+        """, (nome, categoria_id, subcategoria_id, unidade_id, estoque_atual, descricao, quant, int(get_restaurante())))
+
+        print(get_restaurante())
 
         last_produto_id = cursor.lastrowid
 
