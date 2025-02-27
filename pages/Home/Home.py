@@ -1,7 +1,11 @@
 import streamlit as st
+from utils.get_globals import get_usuario_id
 from utils.get_globals import get_restaurante, get_usuario_id
 from db.functions.db_restaurantes import obter_restaurante_pelo_id
 from db.functions.db_login import obter_usuario_by_id
+
+if get_usuario_id() is None:
+    st.stop()
 
 st.title("Home PAGE")
 st.write("Página principal do sistema!")

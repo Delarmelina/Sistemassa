@@ -2,7 +2,7 @@ import streamlit as st
 from db.functions.db_login import obter_usuarios, excluir_usuario
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
-from Paginas.Cadastros.default_new.Usuarios_new import render as Render_dados_usuarios
+from pages.Cadastros.default_new.Usuarios_new import render as Render_dados_usuarios
 from utils.modals.modal_permissions import abrir_modal_perm
 
 

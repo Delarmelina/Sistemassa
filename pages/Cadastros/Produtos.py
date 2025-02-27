@@ -3,7 +3,7 @@ from db.functions.db_produtos import obter_produtos, deletar_produto
 from db.functions.db_config import obter_categorias, obter_subcategorias, obter_unidades, obter_subcategorias_por_categoria
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
-from Paginas.Cadastros.default_new.Produtos_new import render as Render_dados_produtos
+from pages.Cadastros.default_new.Produtos_new import render as Render_dados_produtos
 
 
 #------------------------------------------------------------

@@ -65,7 +65,7 @@ def abrir_selecao(tab):
 
         if st.button("Selecionar") and linha_selecionada["ID"].iloc[0] is not None:
             set_restaurante(linha_selecionada["ID"].iloc[0])
-            st.switch_page("Paginas/Home/Home.py")
+            st.switch_page("pages/Home/Home.py")
     return None  # Retorna None caso nada seja selecionado
 
 
