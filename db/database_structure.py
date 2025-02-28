@@ -125,14 +125,18 @@ def criar_banco():
     """
 
     criar_movimentacoes_itens = """
-    CREATE TABLE IF NOT EXISTS movimentacoes_itens (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        movimentacao_id INTEGER NOT NULL,
-        produto_id INTEGER NOT NULL,
-        quantidade REAL NOT NULL,
-        tipo_movimentacao TEXT CHECK(tipo_movimentacao IN('entrada', 'saida')) NOT NULL,
-        FOREIGN KEY(movimentacao_id) REFERENCES movimentacoes(id),
-        FOREIGN KEY(produto_id) REFERENCES produtos(id)
+    CREATE TABLE IF NOT EXISTS "movimentacoes" (
+        "id"	INTEGER,
+        "id_restaurante"	INTEGER NOT NULL,
+        "data"	DATETIME NOT NULL,
+        "tipo"	TEXT NOT NULL CHECK("tipo" IN ('entrada', 'saida', 'producao', 'transferencia')),
+        "destino_id"	INTEGER,
+        "observacao"	REAL,
+        "fornecedor_id"	INTEGER,
+        FOREIGN KEY("destino_id") REFERENCES "restaurantes"("id"),
+        FOREIGN KEY("id_restaurante") REFERENCES "restaurantes"("id"),
+        FOREIGN KEY("fornecedor_id") REFERENCES "fornecedores"("id"),
+        PRIMARY KEY("id")
     );
     """
 

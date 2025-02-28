@@ -13,7 +13,7 @@ def conectar():
 # ENTRADAS
 # -----------------------------------
 
-def inserir_entrada(data, tipo, observacao, dados = []):
+def inserir_movimento(data, tipo, observacao, fornecedor_id, dados = []):
     
     id_restaurante = int(get_restaurante())
 
@@ -22,8 +22,8 @@ def inserir_entrada(data, tipo, observacao, dados = []):
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO movimetacoes (id_restaurante, data, tipo, origem_id, observacao)
-            VALUES (?, ?, ?, NULL, ?)
+            INSERT INTO movimetacoes (id_restaurante, data, tipo, destino_id, observacao, fornecedor_id)
+            VALUES (?, ?, ?, NULL, ?, NULL)
         """, (id_restaurante, data, tipo, observacao))
 
         last_produto_id = cursor.lastrowid
@@ -41,17 +41,18 @@ def inserir_entrada(data, tipo, observacao, dados = []):
         return (f"Erro ao inserir produto: {e}")
     
 def obter_movimentacoes():
-    conn = conectar()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT m.id as ID, m.tipo as Tipo, m.data as Data, r.nome as Restaurante, o.nome as Origem, m.fornecedor as Fornecedor, m.observacao as Observações
-        FROM movimentacoes m
-        LEFT JOIN restaurantes r ON r.id = m.id_restaurante
-		LEFT JOIN restaurantes o ON o.id = m.origem_id
-        LEFT JOIN fornecedores f ON f.id = m.fornecedor_id
-		WHERE r.id = 1 or o.id = 1
-        """)
-    movimentacoes = cursor.fetchall()
-    conn.close()
-    return movimentacoes
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT m.id as ID, m.tipo as Tipo, m.data as Data, r.nome as Restaurante, o.nome as Destino, f.nome as Fornecedor, m.observacao as Observações
+            FROM movimentacoes m
+            LEFT JOIN restaurantes r ON r.id = m.id_restaurante
+            LEFT JOIN restaurantes o ON o.id = m.destino_id
+            LEFT JOIN fornecedores f ON f.id = m.fornecedor_id
+            WHERE r.id = 1 or o.id = 1
+            """)
+        movimentacoes = cursor.fetchall()
+        conn.close()
+        print(movimentacoes)
+        return movimentacoes
