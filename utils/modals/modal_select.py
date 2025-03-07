@@ -5,9 +5,10 @@ from db.functions.db_config import obter_unidades
 from db.functions.db_produtos import obter_produtos
 from db.functions.db_restaurantes import obter_restaurantes_by_user
 from utils.get_globals import set_restaurante
+from db.functions.db_movimentacao import obter_detalhes_movimentacoes
 
 @st.dialog("Selecionar opção", width="large")
-def abrir_selecao(tab):
+def abrir_selecao(tab, opcional=0):
     if tab == "unidade":
         unidades = obter_unidades()
         df = pd.DataFrame(unidades, columns=["ID", "Unidade"])
@@ -66,6 +67,20 @@ def abrir_selecao(tab):
         if st.button("Selecionar") and linha_selecionada["ID"].iloc[0] is not None:
             set_restaurante(linha_selecionada["ID"].iloc[0])
             st.switch_page("pages/Home/Home.py")
+    elif tab == "detalhes_movimento":
+        if opcional is not None:
+            print(str(opcional) + " - " + str(type(opcional)))
+            detalhes_movimento = obter_detalhes_movimentacoes(opcional)
+
+            df = pd.DataFrame(detalhes_movimento, columns=["ID", "Produto", "Quantidade", "Tipo"])
+
+            gb = GridOptionsBuilder.from_dataframe(df)
+            gb.configure_pagination(paginationAutoPageSize=True)  # Configura paginação
+            grid_options = gb.build()
+
+            # Criar a grade interativa
+            grid_response = AgGrid(df, gridOptions=grid_options, height=300, width="100%", theme="streamlit")
+
     return None  # Retorna None caso nada seja selecionado
 
 

@@ -1,10 +1,9 @@
 import streamlit as st
-from db.functions.db_produtos import obter_produtos, deletar_produto
-from db.functions.db_movimentacao import obter_movimentacoes
-from db.functions.db_config import obter_categorias, obter_subcategorias, obter_unidades, obter_subcategorias_por_categoria
+from db.functions.db_movimentacao import obter_movimentacoes, obter_detalhes_movimentacoes
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 from pages.Cadastros.default_new.Produtos_new import render as Render_dados_produtos
+from utils.modals.modal_select import abrir_selecao
 
 
 #------------------------------------------------------------
@@ -47,7 +46,9 @@ with tab1:
     linha_selecionada = grid_response["selected_rows"]
 
     # Botões das funções
-    col2, col3, col4 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
+    if col1.button("Detalhes", use_container_width=True, disabled=linha_selecionada is None):
+        abrir_selecao("detalhes_movimento", linha_selecionada["ID"].iloc[0])
     if col2.button("Excluir Entrada", use_container_width=True, disabled=linha_selecionada is None):
         # resultado = deletar_entrada(linha_selecionada["ID"].iloc[0])
         resultado = True

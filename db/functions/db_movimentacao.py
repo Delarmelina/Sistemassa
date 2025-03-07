@@ -43,6 +43,7 @@ def inserir_movimento(data, tipo, observacao, fornecedor_id, dados = []):
 def obter_movimentacoes():
         conn = conectar()
         cursor = conn.cursor()
+        restaurante_id = int(get_restaurante())
         cursor.execute(
             """
             SELECT m.id as ID, m.tipo as Tipo, m.data as Data, r.nome as Restaurante, o.nome as Destino, f.nome as Fornecedor, m.observacao as Observações
@@ -50,9 +51,22 @@ def obter_movimentacoes():
             LEFT JOIN restaurantes r ON r.id = m.id_restaurante
             LEFT JOIN restaurantes o ON o.id = m.destino_id
             LEFT JOIN fornecedores f ON f.id = m.fornecedor_id
-            WHERE r.id = 1 or o.id = 1
-            """)
+            WHERE r.id = ? or o.id = ?
+            """, (restaurante_id, restaurante_id))
         movimentacoes = cursor.fetchall()
         conn.close()
-        print(movimentacoes)
         return movimentacoes
+
+def obter_detalhes_movimentacoes(id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT md.id as ID, p.nome as Produto, md.quantidade as Quantidade, md.tipo_movimentacao as Tipo
+        FROM movimentacoes_itens md
+        LEFT JOIN produtos p ON p.id = md.produto_id
+        WHERE md.id = ?
+        """, (int(id),))
+    movimentacoes_detalhes = cursor.fetchall()
+    conn.close()
+    return movimentacoes_detalhes
